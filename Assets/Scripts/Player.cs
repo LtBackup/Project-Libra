@@ -21,6 +21,10 @@ public class Player : MonoBehaviour {
 	float gravity;
 	float maxJumpVelocity;
 	float minJumpVelocity;
+	public bool dashing = false;
+	public float dashFactor = 3f;
+	float dashCountDown = .5f;
+	float prevVelocity;
 	Vector3 velocity;
 	float velocityXSmoothing;
 	Controller2D controller;
@@ -39,7 +43,7 @@ public class Player : MonoBehaviour {
 	void Update () {
 		CalculateVelocity();
 		HandleWallSliding();
-		
+		HandleDashing();
 		controller.Move(velocity * Time.deltaTime, directionalInput);
 
 		if(controller.collisions.above || controller.collisions.below){
@@ -89,6 +93,17 @@ public class Player : MonoBehaviour {
 		}
 	}
 
+	public void OnDashInputDown(){
+		if(!dashing && controller.collisions.below){
+			dashing = true;
+		}
+	
+	}
+
+	/*public void OnDashInputUp(){
+	
+	}*/
+
 	void HandleWallSliding(){
 		wallDirX = (controller.collisions.left)? -1: 1;
 		wallSliding = false;
@@ -116,8 +131,19 @@ public class Player : MonoBehaviour {
 		}
 	}
 
+	void HandleDashing(){
+		if(dashing){
+			dashCountDown -= Time.deltaTime;
+			if(dashCountDown <= 0 || (Mathf.Abs(velocity.x) < Mathf.Abs(prevVelocity) && controller.collisions.below)) {
+				dashing = false;
+				dashCountDown = .5f;
+			}
+			prevVelocity = velocity.x;
+		}
+	}
+
 	void CalculateVelocity(){
-		float targetVelocityX = directionalInput.x * moveSpeed;
+		float targetVelocityX = dashing? directionalInput.x * moveSpeed * dashFactor : directionalInput.x * moveSpeed;
 		velocity.x = Mathf.SmoothDamp(velocity.x, targetVelocityX, ref velocityXSmoothing, (controller.collisions.below)?accelerationTimeGrounded:accelerationTimeAirbourne);
 		velocity.y += gravity * Time.deltaTime;
 	}
