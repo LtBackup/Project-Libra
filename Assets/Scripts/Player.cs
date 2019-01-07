@@ -23,7 +23,8 @@ public class Player : MonoBehaviour {
 	float minJumpVelocity;
 	public bool dashing = false;
 	public float dashFactor = 3f;
-	float dashCountDown = .5f;
+	public float dashDuration = .5f;
+	public bool dashCooldown = false;
 	float prevVelocity;
 	Vector3 velocity;
 	float velocityXSmoothing;
@@ -94,7 +95,7 @@ public class Player : MonoBehaviour {
 	}
 
 	public void OnDashInputDown(){
-		if(!dashing && controller.collisions.below){
+		if(!dashing && !dashCooldown && controller.collisions.below){
 			dashing = true;
 		}
 	
@@ -133,13 +134,19 @@ public class Player : MonoBehaviour {
 
 	void HandleDashing(){
 		if(dashing){
-			dashCountDown -= Time.deltaTime;
-			if(dashCountDown <= 0 || (Mathf.Abs(velocity.x) < Mathf.Abs(prevVelocity) && controller.collisions.below)) {
+			dashCooldown = true;
+			dashDuration -= Time.deltaTime;
+			if((dashDuration <= 0 || Mathf.Abs(velocity.x) < 1) && controller.collisions.below) {
 				dashing = false;
-				dashCountDown = .5f;
+				dashDuration = .5f;
+				Invoke("ResetDash", .25f);
 			}
-			prevVelocity = velocity.x;
+			//prevVelocity = velocity.x;
 		}
+	}
+
+	void ResetDash(){
+		dashCooldown = false;
 	}
 
 	void CalculateVelocity(){
